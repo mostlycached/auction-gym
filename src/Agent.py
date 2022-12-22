@@ -26,6 +26,14 @@ class Agent:
 
         self.memory = memory
 
+        # Trends
+        self.net_utility_trends = []
+        self.gross_utility_trends = []
+        self.allocation_regret_trends = []
+        self.estimation_regret_trends = []
+        self.overbid_regret_trends = []
+        self.underbid_regret_trends = []
+
     def select_item(self, context):
         # Estimate CTR for all items
         estim_CTRs = self.allocator.estimate_CTR(context)
@@ -72,6 +80,8 @@ class Agent:
         last_value = self.logs[-1].value * outcome
         self.net_utility += (last_value - price)
         self.gross_utility += last_value
+        self.net_utility_trends.append(last_value - price)
+        self.gross_utility_trends.append(last_value)
 
     def set_price(self, price):
         self.logs[-1].set_price(price)
@@ -95,21 +105,25 @@ class Agent:
 
     def get_allocation_regret(self):
         ''' How much value am I missing out on due to suboptimal allocation? '''
-        return np.sum(list(opp.best_expected_value - opp.true_CTR * opp.value for opp in self.logs))
+        self.allocation_regret_trends = list(opp.best_expected_value - opp.true_CTR * opp.value for opp in self.logs)
+        return np.sum(self.allocation_regret_trends)
 
     def get_estimation_regret(self):
         ''' How much am I overpaying due to over-estimation of the value? '''
-        return np.sum(list(opp.estimated_CTR * opp.value - opp.true_CTR * opp.value for opp in self.logs))
+        self.estimation_regret_trends = list(opp.estimated_CTR * opp.value - opp.true_CTR * opp.value for opp in self.logs)
+        return np.sum(self.estimation_regret_trends)
 
     def get_overbid_regret(self):
         ''' How much am I overpaying because I could shade more? '''
-        return np.sum(list((opp.price - opp.second_price) * opp.won for opp in self.logs))
+        self.overbid_regret_trends = list((opp.price - opp.second_price) * opp.won for opp in self.logs)
+        return np.sum(self.overbid_regret_trends)
 
     def get_underbid_regret(self):
         ''' How much have I lost because I could have shaded less? '''
         # The difference between the winning price and our bid -- for opportunities we lost, and where we could have won without overpaying
         # Important to mention that this assumes a first-price auction! i.e. the price is the winning bid
-        return np.sum(list((opp.price - opp.bid) * (not opp.won) * (opp.price < (opp.true_CTR * opp.value)) for opp in self.logs))
+        self.underbid_regret_trends = list((opp.price - opp.bid) * (not opp.won) * (opp.price < (opp.true_CTR * opp.value)) for opp in self.logs)
+        return np.sum(self.underbid_regret_trends)
 
     def get_CTR_RMSE(self):
         return np.sqrt(np.mean(list((opp.true_CTR - opp.estimated_CTR)**2 for opp in self.logs)))
@@ -118,6 +132,12 @@ class Agent:
         return np.mean(list((opp.estimated_CTR / opp.true_CTR) for opp in filter(lambda opp: opp.won, self.logs)))
 
     def clear_utility(self):
+        self.net_utility_trends = []
+        self.gross_utility_trends = []
+        self.allocation_regret_trends = []
+        self.estimation_regret_trends = []
+        self.overbid_regret_trends = []
+        self.underbid_regret_trends = []
         self.net_utility = .0
         self.gross_utility = .0
 
