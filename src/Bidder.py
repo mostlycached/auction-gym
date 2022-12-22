@@ -244,7 +244,8 @@ class ValueLearningBidder(Bidder):
         criterion = torch.nn.BCELoss()
         losses = []
         best_epoch, best_loss = -1, np.inf
-        for epoch in tqdm(range(int(epochs)), desc=f'{name}'):
+        for epoch in range(int(epochs)):
+        # for epoch in tqdm(range(int(epochs)), desc=f'{name}'):
             optimizer.zero_grad()
             pred_y = self.winrate_model(X)
             loss = criterion(pred_y, y)
@@ -256,24 +257,24 @@ class ValueLearningBidder(Bidder):
                 best_epoch = epoch
                 best_loss = losses[-1]
             elif epoch - best_epoch > 512:
-                print(f'Stopping at Epoch {epoch}')
+                # print(f'Stopping at Epoch {epoch}')
                 break
 
         losses = np.array(losses)
 
         self.winrate_model.eval()
-        fig, ax = plt.subplots()
-        plt.title(f'{name}')
-        plt.plot(losses, label=r'P(win|$gamma$,x)')
-        plt.ylabel('Loss')
-        plt.legend()
-        fig.set_tight_layout(True)
+        # fig, ax = plt.subplots()
+        # plt.title(f'{name}')
+        # plt.plot(losses, label=r'P(win|$gamma$,x)')
+        # plt.ylabel('Loss')
+        # plt.legend()
+        # fig.set_tight_layout(True)
         # plt.show()
 
         # Predict Utility -- \hat{u}
         orig_features = torch.Tensor(np.hstack((estimated_CTRs.reshape(-1,1), values.reshape(-1,1), np.array(self.gammas).reshape(-1, 1))))
         W = self.winrate_model(orig_features).squeeze().detach().numpy()
-        print('AUC predicting P(win):\t\t\t\t', roc_auc_score(won_mask.astype(np.uint8), W))
+        # print('AUC predicting P(win):\t\t\t\t', roc_auc_score(won_mask.astype(np.uint8), W))
 
         if self.inference == 'policy':
             # Learn a policy to maximise E[U | bid] where bid ~ policy
@@ -314,12 +315,12 @@ class ValueLearningBidder(Bidder):
 
             losses = np.array(losses)
             self.bidding_policy.eval()
-            fig, ax = plt.subplots()
-            plt.title(f'{name}')
-            plt.plot(losses, label=r'$\pi(\gamma)$')
-            plt.ylabel('- Estimated Expected Utility')
-            plt.legend()
-            fig.set_tight_layout(True)
+            # fig, ax = plt.subplots()
+            # plt.title(f'{name}')
+            # plt.plot(losses, label=r'$\pi(\gamma)$')
+            # plt.ylabel('- Estimated Expected Utility')
+            # plt.legend()
+            # fig.set_tight_layout(True)
             #plt.show()
 
         self.model_initialised = True
@@ -393,7 +394,8 @@ class PolicyLearningBidder(Bidder):
 
         losses = []
         best_epoch, best_loss = -1, np.inf
-        for epoch in tqdm(range(int(epochs)), desc=f'{name}'):
+        # for epoch in tqdm(range(int(epochs)), desc=f'{name}'):
+        for epoch in range(int(epochs)):
             optimizer.zero_grad()  # Setting our stored gradients equal to zero
             loss = self.model.loss(X, gammas, propensities, utilities, importance_weight_clipping_eps=50.0)
             loss.backward()  # Computes the gradient of the given tensor w.r.t. the weights/bias
@@ -405,7 +407,7 @@ class PolicyLearningBidder(Bidder):
                 best_epoch = epoch
                 best_loss = losses[-1]
             elif epoch - best_epoch > 512:
-                print(f'Stopping at Epoch {epoch}')
+                # print(f'Stopping at Epoch {epoch}')
                 break
 
         losses = np.array(losses)
@@ -488,7 +490,7 @@ class DoublyRobustBidder(Bidder):
             # Predict Utility -- \hat{u}
             orig_features = torch.Tensor(np.hstack((estimated_CTRs.reshape(-1,1), values.reshape(-1,1), gammas_numpy.reshape(-1, 1))))
             W = self.winrate_model(orig_features).squeeze().detach().numpy()
-            print('AUC predicting P(win):\t\t\t\t', roc_auc_score(won_mask.astype(np.uint8), W))
+            # print('AUC predicting P(win):\t\t\t\t', roc_auc_score(won_mask.astype(np.uint8), W))
 
             V = estimated_CTRs * values
             P = estimated_CTRs * values * gammas_numpy
@@ -544,7 +546,7 @@ class DoublyRobustBidder(Bidder):
         # Predict Utility -- \hat{u}
         orig_features = torch.Tensor(np.hstack((estimated_CTRs.reshape(-1,1), values.reshape(-1,1), gammas_numpy.reshape(-1, 1))))
         W = self.winrate_model(orig_features).squeeze().detach().numpy()
-        print('AUC predicting P(win):\t\t\t\t', roc_auc_score(won_mask.astype(np.uint8), W))
+        # print('AUC predicting P(win):\t\t\t\t', roc_auc_score(won_mask.astype(np.uint8), W))
 
         V = estimated_CTRs * values
         P = estimated_CTRs * values * gammas_numpy
